@@ -1,30 +1,67 @@
 const { ObjectId } = require("mongodb");
 class BookService {
   constructor(client) {
-    this.Book = client.db().collection("books");
+    this.Sach = client.db().collection("Sach");
   }
-  // Định nghĩa các phương thức truy xuất CSDL sử dụng mongodb API
-    extractBookData(payload) {
-      const book = {
-        maSach: payload.maSach,
-        tenSach: payload.tenSach,
-        docGia: payload.donGia,
-        soQuyen: payload.soQuyen,
-        namXuatBan: payload.namXuatBan,
-        maNXB: payload.maNXB,
-        tacGia: payload.tacGia,
-      };
-    // Remove undefined fields
-    Object.keys(book).forEach(
-      (key) => book[key] === undefined && delete book[key]
+  extractBookData(payload) {
+    const sach = {
+      maSach: payload.maSach,
+      tenSach: payload.tenSach,
+      donGia: payload.donGia,
+      soQuyen: payload.soQuyen,
+      namXuatBan: payload.namXuatBan,
+      maNXB: payload.maNXB,
+      tacGia: payload.tacGia,
+    };
+    Object.keys(sach).forEach(
+      (key) => sach[key] === undefined && delete sach[key]
     );
-    return book;
+    return sach;
   }
   async create(payload) {
-    const book = this.extractBookData(payload);
-    const result = await this.Book.findOneAndUpdate(
-      book,
+    const sach = this.extractBookData(payload);
+    const result = await this.Sach.findOneAndUpdate(
+      sach,
+      { $set: sach },
+      {
+        returnDocument: "after",
+        upsert: true,
+      }
     );
+    console.log(result);
+    return result;
+  }
+  async find(filter) {
+    const cursor = await this.Sach.find(filter);
+    return await cursor.toArray();
+  }
+  async findByName(tenSach) {
+    return await this.find({
+      tenSach: { $regex: new RegExp(tenSach), $options: "i" },
+    });
+  }
+  async findById(id) {
+    return await this.Sach.findOne({
+      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    });
+  }
+  async update(id, payload) {
+    const filter = {
+      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    };
+    const update = this.extractBookData(payload);
+    const result = await this.Sach.findOneAndUpdate(
+      filter,
+      { $set: update },
+      { returnDocument: "after" }
+    );
+    console.log(result);
+    return result;
+  }
+  async delete(id) {
+    const result = await this.Sach.findOneAndDelete({
+      _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
+    });
     return result.value;
   }
 }
