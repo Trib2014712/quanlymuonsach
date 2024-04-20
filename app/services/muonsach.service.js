@@ -28,7 +28,8 @@ class MuonSachService {
         upsert: true,
       }
     );
-    return result.value;
+    console.log(result);
+    return result;
   }
   async find(filter) {
     const cursor = await this.MuonSach.find(filter);
@@ -62,5 +63,39 @@ class MuonSachService {
     });
     return result.value;
   }
+async borrowBook(req, res) {
+  try {
+    const { maDocGia, tenDocGia, maSach, tenSach, ngayMuon, ngayTra } = req.body;
+
+    // Kiểm tra số lượng sách
+    const book = await BookService.get(maSach);
+    if (book.soQuyen > 0) {
+      const borrowData = {
+        maDocGia,
+        tenDocGia,
+        maSach,
+        tenSach,
+        ngayMuon,
+        ngayTra,
+        trangThai: "Đã mượn", // Thiết lập trạng thái của sách là đã mượn
+      };
+
+      // Ghi nhận thông tin mượn sách vào cơ sở dữ liệu
+      const result = await MuonSachService.register(borrowData);
+
+      // Giảm số lượng sách sau khi mượn thành công
+      await BookService.updateQuantity(maSach);
+
+      return res.status(200).json({ message: "Đã mượn sách thành công.", data: result });
+    } else {
+      return res.status(400).json({ message: "Xin lỗi, đã hết sách. Không thể mượn." });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Đã xảy ra lỗi khi mượn sách." });
+  }
+}
+
 }
 module.exports = MuonSachService;
+

@@ -64,6 +64,12 @@ class BookService {
     });
     return result.value;
   }
+  async findByMaSach(maSach) {
+    return await this.find({
+      maSach: { $regex: new RegExp(maSach), $options: "i" },
+    });
+  }
 }
+
 
 module.exports = BookService;

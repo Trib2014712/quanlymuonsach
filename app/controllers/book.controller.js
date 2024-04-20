@@ -5,8 +5,16 @@ exports.create = async (req, res, next) => {
   if (!req.body?.maSach) {
     return next(new ApiError(400, "Vui lòng điền mã sách"));
   }
+  const namXuatBanRegex = /^(19|20)\d{2}$/; // Định dạng năm từ 1900 đến 2099
+  if (!namXuatBanRegex.test(req.body.namXuatBan)) {
+    return next(new ApiError(400, "Định dạng năm xuất bản không hợp lệ"));
+  }
   try {
     const bookService = new BookService(MongoDB.client);
+    const existingBookBymaSach = await bookService.findByMaSach(req.body.maSach);
+    if (existingBookBymaSach.length > 0) {
+      return next(new ApiError(409, "Mã sách đã tồn tại"));
+    }
     const document = await bookService.create(req.body);
     return res.send(document);
   } catch (error) {
@@ -68,3 +76,4 @@ exports.delete = async (req, res, next) => {
     return next(new ApiError(500, "Không thể xóa sách "));
   }
 };
+
